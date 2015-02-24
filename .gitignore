@@ -1,0 +1,27 @@
+#Debug files that are unnecessary
+*.tlog
+*.log
+*.obj
+*.pdb
+*.exe
+*.gb
+*.sav
+*.manifest
+*.lastbuildstate
+*.cache
+*.bin
+*.sgm
+*.clt
+hook.txt
+*_pal
+MovesCsv.txt
+TypeMap.txt
+
+
+.\Debug\Emulator\.
+.\Debug\InfoFiles\MovesCsv.txt
+.\Debug\InfoFiles\TypeMap.txt
+'.\Debug\Pokemon Player.exe'
+'.\Debug\Pokemon Player.ilk'
+'.\Debug\Pokemon Player.pdb'
+'.\Pokemon Player\Debug'
