@@ -5,8 +5,8 @@
 
 class Control {
 
-    public:
-        static bool pressA();
+	public:
+		static bool pressA();
 		static bool pressB();
 		//Press B alot to skip the boring stuff
 		static bool mashB(int times);
@@ -19,7 +19,7 @@ class Control {
 		static bool goRight();
 		static bool go(int dir);
 
-    private:
-        static bool pressKey(short vk);
+	private:
+		static bool pressKey(short vk);
 };
 #endif
