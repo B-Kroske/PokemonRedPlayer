@@ -27,6 +27,9 @@
     <ClInclude Include="headers\Data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="headers\Moving.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Battle.cpp">
@@ -42,6 +45,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Moving.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

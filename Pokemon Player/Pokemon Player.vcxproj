@@ -64,6 +64,7 @@
     <ClInclude Include="headers\Battle.h" />
     <ClInclude Include="headers\Control.h" />
     <ClInclude Include="headers\Data.h" />
+    <ClInclude Include="headers\Moving.h" />
     <ClInclude Include="headers\Pokemon.h" />
   </ItemGroup>
   <ItemGroup>
@@ -71,6 +72,7 @@
     <ClCompile Include="src\Control.cpp" />
     <ClCompile Include="src\Data.cpp" />
     <ClCompile Include="src\Driver.cpp" />
+    <ClCompile Include="src\Moving.cpp" />
     <ClCompile Include="src\Pokemon.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

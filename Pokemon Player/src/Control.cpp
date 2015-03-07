@@ -51,18 +51,21 @@ bool Control::dumpRam()
 //Up, Down, Left, Right (0, 1, 2, 3)
 bool Control::go(int dir)
 {
-	
 	switch(dir) {
 	case 0:
+		//cout << "Going up" << endl;
 		return pressKey(0x54);
 		break;
 	case 1:
+		//cout << "Going down" << endl;
 		return pressKey(0x55);
 		break;
 	case 2:
+		//cout << "Going left" << endl;
 		return pressKey(0x56);
 		break;
 	case 3:
+		//cout << "Going right" << endl;
 		return pressKey(0x57);
 		break;
 	}
