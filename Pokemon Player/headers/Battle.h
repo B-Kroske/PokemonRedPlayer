@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "../headers/Pokemon.h"
 #include "../headers/Control.h"
 #include "../headers/Data.h"
@@ -11,6 +12,7 @@ class Battle {
 
     public:
 		Battle(Data &d);
+		~Battle();
 		void fight();
 
     private:
@@ -39,6 +41,12 @@ class Battle {
 		void determineAction();
 		//Attack with the i'th move
 		void attack(int i);
+
+		//Switch to the i'th pokemon
+		void swap(int i);
+
+		//Use a full heal on the i'th pokemon (assuming there are any full heals in the first item slot)
+		void heal(int i);
 
 		//Updates the i'th position pokemon on the player's team. If pos equals -1, update the opposing pokemon.
 		bool updatePoke(int pos);

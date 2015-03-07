@@ -14,9 +14,10 @@
 *.clt
 hook.txt
 *_pal
+*.DMP
 MovesCsv.txt
 TypeMap.txt
-
+vba.ini
 
 .\Debug\Emulator\.
 .\Debug\InfoFiles\MovesCsv.txt

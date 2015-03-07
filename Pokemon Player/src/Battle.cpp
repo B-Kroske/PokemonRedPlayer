@@ -10,17 +10,26 @@ Battle::Battle(Data &d)
 	itemPos = 0;
 	//Save the reference to the data
 	dat = d;
-
+	//Create the memory chunk that will be read into
+	memBlock = new char[8192];
 	//Should never be accessed before being initialized, but just in case
 	for(int i = 0; i < 2; i++)
 		nextMove[i] = 0;
 }
+
+Battle::~Battle()
+{
+	delete[] memBlock;
+}
+
 
 void Battle::fight()
 {
 	//Reset the state variables
 	pkmOut = 0;
 	currMove = 0;
+	currSelPoke = 0;
+	itemPos = 0;
 
 	//Get the ram and build the Player's team
 	readRam();
@@ -33,33 +42,44 @@ void Battle::fight()
 	{
 		//Read the current state of the battle
 		readRam();
+
+		//Update both lead's stats
+		updatePoke(0);
+		updatePoke(-1);
 		//Calculate the best action
 		determineAction();
+
+		cout << nextMove[0] << " " << nextMove[1] << endl;
 		//Take the action
 		if(nextMove[0] == 1)
 		{
-			cout << "Attacking with move " << nextMove[1] << endl;
 			//Attack function
 			attack(nextMove[1]);
 		}
 
+		//Switch
+		if(nextMove[0] == 2)
+		{
+			swap(nextMove[1]);
+		}
+
 		//Heal
-		
+		if(nextMove[0] == 3)
+		{
+			heal(nextMove[1]);
+		}
 		//Take some time to let the attack play out
-		Sleep(4000);
+		Sleep(5000);
 		//Mash "B" to get by the boring words (carful to not have the cursor in a text document)
 		Control::mashB(6);
 	}
 	//Talk to everyone after the battle
 	Control::mashB(10);
 }
+
 bool Battle::readRam()
 {
 	Control::dumpRam();
-
-	streampos size;
-	memBlock = new char [8192];
-
 	ifstream file ("./Emulator/cgb_wram.bin", ios::in|ios::binary);
 	if (file.is_open())
 	{
@@ -67,7 +87,7 @@ bool Battle::readRam()
 		file.read (memBlock, 8192);
 		file.close();
 
-		cout << "RAM loaded" << endl;
+		//cout << "RAM loaded" << endl;
 	}
 	else cout << "Unable to open file" << endl;
 
@@ -158,67 +178,91 @@ double Battle::calcDamage(Pokemon atk, Pokemon def, int move, bool isMax)
     return damage;
 }
 
+
+
 //Determine the best move to take at a specific point.
 //1 = attack, 2 = switch, 3 = heal
 void Battle::determineAction()
 {
-	double bestResults[6][3] = {{0, 0, 0},{0, 0, 0},{0, 0, 0},{0, 0, 0},{0, 0, 0},{0, 0, 0}};
+	int bestChoice = 0;
+	int bestTank = 0;
+	boolean leadSafe;
+	Result bestResults[6];
 
-	double tmpStorage[3];
-
+	//Figure out the max damage that each teammember will deal and take
 	for(int i = 0; i < teamCount; i++)
 	{
+		bestResults[i].teamPos = i;
 		//Try all moves against the opponent
 		for(int j = 0; j < 4; j++)
 		{
-			tmpStorage[0] = j;
-			tmpStorage[1] = calcDamage(playerTeam[i], enemy, j, false);
-			//Calculate the damage the player would take from the jth move.
-			tmpStorage[2] = calcDamage(enemy, playerTeam[i], j, false);
+			Result tmpStorage(i, j, calcDamage(playerTeam[i], enemy, j, false), calcDamage(enemy, playerTeam[i], j, true));
 			//cout << tmpStorage[1] << " " << tmpStorage[2] << endl;
 			//Update with the best power
-			if(bestResults[i][1] < tmpStorage[1])
+			if(bestResults[i].maxDamage < tmpStorage.maxDamage)
 			{
-				bestResults[i][0] = tmpStorage[0];
-				bestResults[i][1] = tmpStorage[1];
+				bestResults[i].maxDamage = tmpStorage.maxDamage;
+				bestResults[i].move = tmpStorage.move;
 			}
 			//Update with the max the enemy can do
-			if(bestResults[i][2] < tmpStorage[2])
-				bestResults[i][2] = tmpStorage[2];
+			if(bestResults[i].takeDamage < tmpStorage.takeDamage)
+				bestResults[i].takeDamage = tmpStorage.takeDamage;
 		}
 	}
 
-	//Assume we will attack with the strongest move on our current lead
-	nextMove[0] = 1;
-	nextMove[1] = (int)bestResults[pkmOut][0];
+	//Can the lead take a hit?
+	leadSafe = bestResults[pkmOut].takeDamage < playerTeam[pkmOut].getStat(0);
 
-	//Will the pokemon survive a hit?
-	if(bestResults[pkmOut][2] >= playerTeam[pkmOut].getStat(0))
+	//Heal the lead if it is threatened
+
+	//Sort to find the strongest pokemon
+	sort(begin(bestResults), end(bestResults), Data::sortResults);
+
+	//Move through the list to find something usable
+	while(bestChoice < 6)
 	{
-		//It will drop in one more hit
-		
-		//Could it survive at full health?
-		//If no, switch
-		if(playerTeam[pkmOut].getStat(5) < bestResults[pkmOut][2])
+		//Can the best choice take the worst hit?
+		//*Yes
+		if(bestResults[bestChoice].takeDamage < playerTeam[bestResults[bestChoice].teamPos].getStat(0))
 		{
-			cout << "SWITCH!!!" << endl;
-			nextMove[0] = 2;
+			break;
 		}
-		//If yes, heal
+		//No, but it could if it was at full health and the lead can take a hit (I am not considering switching to a tank and then healing the best)
+		else if((leadSafe && bestResults[bestChoice].takeDamage < playerTeam[bestChoice].getStat(5)) ||
+			(pkmOut == bestResults[bestChoice].teamPos && bestResults[bestChoice].takeDamage < playerTeam[pkmOut].getStat(5)))
+		{
+			//Heal the best choice
+			cout << "Healing" << endl;
+			nextMove[0] = 3;
+			nextMove[1] = bestResults[bestChoice].teamPos;
+			return;
+		}
+		//Can the next strongest thing take a hit?
 		else
 		{
-			cout << "HEAL!!" << endl;
-			nextMove[0] = 3;
-
+			bestChoice++;
 		}
-		
 	}
-	
-	//		Heal or switch to one that has teh best damage/survivability ratio (assuming it can take a hit).
 
-	
+	if(bestChoice >= 6)
+	{
+		cout << "Something went horribly wrong" << endl;
+	}
 
-	cout << "nextMove " << nextMove[0] << " " << nextMove[1] << endl;
+	//If the best choice is currently out, attack
+	//If it isn't, switch
+	if(bestResults[bestChoice].teamPos == pkmOut)
+	{
+		cout << "Attacking!" << endl;
+		nextMove[0] = 1;
+		nextMove[1] = bestResults[bestChoice].move;
+	}
+	else
+	{
+		cout << "Switching to " << bestResults[bestChoice].teamPos << endl;
+		nextMove[0] = 2;
+		nextMove[1] = bestResults[bestChoice].teamPos;
+	}
 }
 
 void Battle::attack(int i)
@@ -242,6 +286,66 @@ void Battle::attack(int i)
 	Control::pressA();
 }
 
+void Battle::swap(int i)
+{
+	//Get to "PKMN"
+	Control::goUp();
+	Control::goRight();
+	Control::pressA();
+	Sleep(500);
+	//Navigate to the proper pokemon
+	while(currSelPoke > i)
+	{
+		Control::goUp();
+		currSelPoke--;
+	}
+	while(currSelPoke < i)
+	{
+		Control::goDown();
+		currSelPoke++;
+	}
+	//Press "A" to select the pokemon and then confirm it
+	Control::pressA();
+	Control::pressA();
+}
+
+void Battle::heal(int i)
+{
+	//Vitally important that this move is selected properly
+	Sleep(2000);
+	Control::mashB(5);
+	//Get to "Item"
+	Control::goDown();
+	Control::goLeft();
+	Control::pressA();
+	Sleep(500);
+
+	//Move to the top of the item list
+	for(int j = 0; j < 20; j++)
+		Control::goUp();
+
+	//Select that the full heal and say to use it
+	Control::pressA();
+	Control::pressA();
+	Sleep(500);
+
+	//Select the i'th pokemon
+	while(currSelPoke > i)
+	{
+		Control::goUp();
+		currSelPoke--;
+	}
+	while(currSelPoke < i)
+	{
+		Control::goDown();
+		currSelPoke++;
+	}
+	//Press "A" to heal
+	Control::pressA();
+	//Press "B" a couple times
+	Control::mashB(3);
+}
+
 bool Battle::buildTeam()
 {
 	//Load the fist enemy
@@ -263,6 +367,6 @@ bool Battle::updatePoke(int pos)
 	if(pos >= 0)
 		playerTeam[pos] = loadShortPoke(0x1009);
 	else
-		enemy = loadShortPoke(0xCFDA);
+		enemy = loadShortPoke(0x0FDA);
 	return true;
 }
